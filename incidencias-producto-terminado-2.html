@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incidencias de Producto Terminado · Bauer Lemans</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.45.4/supabase-js.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#171a21;
+    --panel-2:#1e222b;
+    --border:#2a2f3a;
+    --text:#e8eaf0;
+    --text-dim:#9aa1b0;
+    --accent:#4f8cff;
+    --accent-dim:#294a8a;
+    --danger:#e2564f;
+    --warn:#e0a63c;
+    --ok:#3fbf7f;
+    --radius:10px;
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  header.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 28px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  header.topbar h1{
+    font-size:17px;
+    margin:0;
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+  header.topbar .sub{
+    color:var(--text-dim);
+    font-size:12.5px;
+    margin-top:2px;
+  }
+  header.topbar .user-info{
+    font-size:12.5px;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  header.topbar button.logout{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    padding:6px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:12px;
+  }
+  header.topbar button.logout:hover{border-color:var(--danger);color:var(--danger);}
+
+  main{max-width:1280px;margin:0 auto;padding:24px 28px 60px;}
+
+  /* --- login --- */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .login-box{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:36px 32px;
+    width:340px;
+  }
+  .login-box h2{margin:0 0 4px;font-size:18px;}
+  .login-box p{color:var(--text-dim);font-size:13px;margin:0 0 20px;}
+  .login-box input{
+    width:100%;
+    padding:10px 12px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    font-size:13.5px;
+  }
+  .login-box button{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    font-size:13.5px;
+    margin-top:6px;
+  }
+  .login-box button:hover{background:#3f78e0;}
+  .login-error{color:var(--danger);font-size:12.5px;margin-top:10px;min-height:14px;}
+  .login-box .btn-modo-prueba{
+    background:transparent !important;
+    border:1px dashed var(--border);
+    color:var(--text-dim);
+    font-weight:500;
+  }
+  .login-box .btn-modo-prueba:hover{border-color:var(--accent);color:var(--text);}
+
+  /* --- tabs --- */
+  .tabs{
+    display:flex;
+    gap:4px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:22px;
+  }
+  .tab-btn{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    padding:10px 16px;
+    font-size:13.5px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    font-weight:500;
+  }
+  .tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* --- cards / panels --- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .panel + .panel{margin-top:18px;}
+  .panel h3{margin:0 0 16px;font-size:14.5px;font-weight:600;}
+
+  /* --- form --- */
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+  }
+  @media(max-width:900px){.form-grid{grid-template-columns:repeat(2,1fr);}}
+  .field{display:flex;flex-direction:column;gap:5px;position:relative;}
+  .field label{font-size:11.5px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .field input, .field select, .field textarea{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 10px;
+    color:var(--text);
+    font-size:13.5px;
+    font-family:inherit;
+  }
+  .field textarea{resize:vertical;min-height:38px;}
+  .field.span2{grid-column:span 2;}
+  .field.span4{grid-column:span 4;}
+  @media(max-width:900px){.field.span2,.field.span4{grid-column:span 2;}}
+
+  .autocomplete-list{
+    position:absolute;
+    top:100%;
+    left:0;right:0;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    max-height:220px;
+    overflow-y:auto;
+    z-index:30;
+    margin-top:4px;
+    display:none;
+  }
+  .autocomplete-list.show{display:block;}
+  .autocomplete-item{
+    padding:8px 10px;
+    cursor:pointer;
+    font-size:13px;
+    border-bottom:1px solid var(--border);
+  }
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:hover, .autocomplete-item.active{background:var(--accent-dim);}
+  .autocomplete-item .ac-code{color:var(--text-dim);font-size:11px;}
+
+  .form-actions{margin-top:18px;display:flex;gap:10px;align-items:center;}
+  button.primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  button.primary:hover{background:#3f78e0;}
+  button.primary:disabled{opacity:.5;cursor:not-allowed;}
+  button.secondary{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:8px;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--accent);}
+  .form-msg{font-size:12.5px;}
+  .form-msg.ok{color:var(--ok);}
+  .form-msg.err{color:var(--danger);}
+
+  /* --- filters --- */
+  .filters-row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:16px;}
+  .filters-row .field{min-width:150px;}
+  .filters-row .field input, .filters-row .field select{padding:7px 9px;font-size:12.5px;}
+
+  /* --- table --- */
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  thead th{
+    text-align:left;
+    padding:10px 10px;
+    color:var(--text-dim);
+    font-weight:600;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  thead th:hover{color:var(--text);}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:hover{background:var(--panel-2);}
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .badge-moho{background:#3a2e1a;color:var(--warn);}
+  .badge-otros{background:#26314a;color:var(--accent);}
+  .badge-danger{background:#3a1f1e;color:var(--danger);}
+  .badge-default{background:#242a36;color:var(--text-dim);}
+  .row-actions{display:flex;gap:8px;}
+  .row-actions button{
+    background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11.5px;
+    text-decoration:underline;padding:0;
+  }
+  .row-actions button:hover{color:var(--danger);}
+
+  .table-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .count-pill{color:var(--text-dim);font-size:12.5px;}
+
+  /* --- dashboard --- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .kpi-card .kpi-label{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;}
+  .kpi-card .kpi-value{font-size:26px;font-weight:700;margin-top:6px;}
+  .kpi-card .kpi-sub{font-size:11.5px;color:var(--text-dim);margin-top:4px;}
+
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .bar-label{width:150px;font-size:12px;color:var(--text-dim);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{flex:1;background:var(--panel-2);border-radius:6px;height:16px;position:relative;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);border-radius:6px;}
+  .bar-value{width:36px;text-align:right;font-size:12px;color:var(--text-dim);flex-shrink:0;}
+
+  .loading-state, .empty-state{text-align:center;padding:40px;color:var(--text-dim);font-size:13px;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>Incidencias de Producto Terminado</h2>
+    <p>Bauer Lemans · acceso con tu cuenta del portal</p>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password">
+    <button onclick="handleLogin()">Ingresar</button>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn-modo-prueba" style="margin-top:14px;width:100%;" onclick="entrarModoPrueba()">Ver sin iniciar sesión (modo prueba)</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" style="display:none;">
+  <header class="topbar">
+    <div>
+      <h1>Incidencias de Producto Terminado</h1>
+      <div class="sub">Bauer Lemans · La Sin Gluten · Bocado · Rietmann Ibérica</div>
+    </div>
+    <div class="user-info">
+      <span id="userEmail"></span>
+      <button class="logout" onclick="handleLogout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="cargar" onclick="switchTab('cargar')">Cargar incidencia</button>
+      <button class="tab-btn" data-tab="listado" onclick="switchTab('listado')">Listado</button>
+      <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    </div>
+
+    <!-- ===== TAB: CARGAR ===== -->
+    <div class="tab-panel active" id="tab-cargar">
+      <div class="panel">
+        <h3>Nueva incidencia</h3>
+        <div class="form-grid">
+
+          <div class="field">
+            <label>Fecha</label>
+            <input type="date" id="f_fecha">
+          </div>
+
+          <div class="field">
+            <label>Quién origina la incidencia</label>
+            <select id="f_origen">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Fabricante</label>
+            <select id="f_fabricante">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Motivo de incidencia</label>
+            <select id="f_motivo">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+
+          <div class="field span2">
+            <label>Producto</label>
+            <input type="text" id="f_producto_nombre" placeholder="Buscar en catálogo o escribir libremente..." autocomplete="off">
+            <div class="autocomplete-list" id="productoAutocomplete"></div>
+          </div>
+
+          <div class="field">
+            <label>Unidades afectadas</label>
+            <input type="number" id="f_unidad" step="any" placeholder="0">
+          </div>
+
+          <div class="field">
+            <label>Lote</label>
+            <input type="text" id="f_lote" placeholder="Ej. 26L02R07">
+          </div>
+
+          <div class="field">
+            <label>Caducidad</label>
+            <input type="date" id="f_caducidad">
+          </div>
+
+          <div class="field span2">
+            <label>Observaciones</label>
+            <textarea id="f_observaciones" placeholder="Detalle adicional..."></textarea>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <button class="primary" id="btnGuardar" onclick="guardarIncidencia()">Guardar incidencia</button>
+          <button class="secondary" onclick="limpiarFormulario()">Limpiar</button>
+          <span class="form-msg" id="formMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: LISTADO ===== -->
+    <div class="tab-panel" id="tab-listado">
+      <div class="panel">
+        <div class="filters-row">
+          <div class="field">
+            <label>Desde</label>
+            <input type="date" id="fl_desde" onchange="aplicarFiltros()">
+          </div>
+          <div class="field">
+            <label>Hasta</label>
+            <input type="date" id="fl_hasta" onchange="aplicarFiltros()">
+          </div>
+          <div class="field">
+            <label>Fabricante</label>
+            <select id="fl_fabricante" onchange="aplicarFiltros()"><option value="">Todos</option></select>
+          </div>
+          <div class="field">
+            <label>Motivo</label>
+            <select id="fl_motivo" onchange="aplicarFiltros()"><option value="">Todos</option></select>
+          </div>
+          <div class="field" style="flex:1;min-width:200px;">
+            <label>Buscar producto / lote / obs.</label>
+            <input type="text" id="fl_texto" placeholder="Escribir para filtrar..." oninput="aplicarFiltros()">
+          </div>
+          <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
+        </div>
+
+        <div class="table-toolbar">
+          <span class="count-pill" id="countPill">Cargando...</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="ordenarPor('fecha')">Fecha</th>
+                <th onclick="ordenarPor('origen_incidencia')">Origen</th>
+                <th onclick="ordenarPor('fabricante')">Fabricante</th>
+                <th onclick="ordenarPor('producto_nombre')">Producto</th>
+                <th onclick="ordenarPor('motivo_incidencia')">Motivo</th>
+                <th onclick="ordenarPor('unidad')">Unid.</th>
+                <th onclick="ordenarPor('lote')">Lote</th>
+                <th onclick="ordenarPor('caducidad')">Caducidad</th>
+                <th>Observaciones</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tablaBody">
+              <tr><td colspan="10" class="loading-state">Cargando incidencias...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: DASHBOARD ===== -->
+    <div class="tab-panel" id="tab-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Incidencias totales</div>
+          <div class="kpi-value" id="kpiTotal">–</div>
+          <div class="kpi-sub" id="kpiTotalSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Este mes</div>
+          <div class="kpi-value" id="kpiMes">–</div>
+          <div class="kpi-sub">vs. mes anterior</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Unidades afectadas (total)</div>
+          <div class="kpi-value" id="kpiUnidades">–</div>
+          <div class="kpi-sub">suma histórica</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Motivo más frecuente</div>
+          <div class="kpi-value" id="kpiMotivo" style="font-size:16px;">–</div>
+          <div class="kpi-sub" id="kpiMotivoSub"></div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="panel">
+          <h3>Por motivo de incidencia</h3>
+          <div id="chartMotivo"></div>
+        </div>
+        <div class="panel">
+          <h3>Por fabricante</h3>
+          <div id="chartFabricante"></div>
+        </div>
+        <div class="panel">
+          <h3>Por producto (top 10)</h3>
+          <div id="chartProducto"></div>
+        </div>
+        <div class="panel">
+          <h3>Por mes (últimos 12)</h3>
+          <div id="chartMes"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — completar con tus credenciales reales
+   (las mismas que usás en tus otros módulos del portal)
+   ============================================================ */
+const SUPABASE_URL = 'https://lbbpnnvwtanurtjqgcqv.supabase.co'; // <- confirmar que es correcto
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYnBubnZ3dGFudXJ0anFnY3F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjM2NDEsImV4cCI6MjA5MjMzOTY0MX0.a25lrgUlzDM4TSp4c6KOCQ3ERZnSk8-5r2y9DbhRPxg';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============================================================
+   LISTAS FIJAS (replicadas de la hoja LISTAS del Excel original)
+   ============================================================ */
+const MOTIVOS = [
+  'PRODUCTO CON MOHO','EMBALAJE ABIERTO','OBJETO EXTRAÑO EN PRODUCTO','INSECTO EN PRODUCTO',
+  'PRODUCTO VENCIDO','PRODUCTO HÚMEDO','FALLA EN EL PRODUCTO','HALLAZGO CLASIFICACION',
+  'PEDIDO ERRONEO','PEDIDO PENDIENTE DE ENTREGAR','PEDIDO CON RETRASO','FALTA DE PRODUCTO EN PEDIDO',
+  'ERROR GLS','PEDIDO CON ETIQUETA DUPLICADA','NO SE REGISTRO PEDIDO EN LA WEB','DESCUENTO',
+  'ERROR EN ENVIO','PROBLEMA DEL TRANSPORTE','MUESTRA/TESTEO','OTROS'
+];
+const ORIGENES = [
+  'Bocado (control interno)','Naturpan','Nueva Dietética (Juanjo)','Cliente web',
+  'WEB','CONTROL STOCK','ROBUSTILLO','PROTELLA'
+];
+const FABRICANTES = [
+  'Franjuba','Sinnack','Theodor Rietmann','Nueva Dietética (Juanjo)','Bocado','GLS','ROBUSTILLO','PROTELLA'
+];
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+let currentUser = null;
+let allIncidencias = [];
+let filteredIncidencias = [];
+let sortState = { field: 'fecha', dir: 'desc' };
+let catalogoProductos = [];
+let productoSeleccionadoId = null;
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function initAuth(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session){
+    currentUser = session.user;
+    showApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+}
+
+async function handleLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!email || !password){
+    errEl.textContent = 'Completá email y contraseña.';
+    return;
+  }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error){
+    errEl.textContent = 'Credenciales incorrectas o sin acceso.';
+    return;
+  }
+  currentUser = data.user;
+  showApp();
+}
+
+async function handleLogout(){
+  if (modoPrueba){
+    location.reload();
+    return;
+  }
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+let modoPrueba = false;
+
+function entrarModoPrueba(){
+  modoPrueba = true;
+  currentUser = { email: 'Modo prueba (sin login)' };
+  showApp();
+}
+
+function showApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('userEmail').textContent = currentUser.email;
+  if (modoPrueba){
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#3a2e1a;color:var(--warn);font-size:12px;padding:6px 28px;text-align:center;';
+    banner.textContent = 'Modo prueba: sin login, acceso temporal habilitado. Recordá revertirlo cuando el ingreso normal vuelva a funcionar.';
+    document.querySelector('header.topbar').insertAdjacentElement('afterend', banner);
+  }
+  initSelects();
+  document.getElementById('f_fecha').valueAsDate = new Date();
+  loadCatalogo();
+  loadIncidencias();
+}
+
+/* ============================================================
+   SELECTS FIJOS
+   ============================================================ */
+function initSelects(){
+  fillSelect('f_origen', ORIGENES);
+  fillSelect('f_fabricante', FABRICANTES);
+  fillSelect('f_motivo', MOTIVOS);
+  fillSelect('fl_fabricante', FABRICANTES, true);
+  fillSelect('fl_motivo', MOTIVOS, true);
+}
+function fillSelect(id, arr, keepFirst){
+  const sel = document.getElementById(id);
+  arr.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+/* ============================================================
+   CATÁLOGO DE PRODUCTOS (product_specs) — autocompletado
+   ============================================================ */
+async function loadCatalogo(){
+  const { data, error } = await supabase
+    .from('product_specs')
+    .select('id, nombre, articulo_no')
+    .order('nombre', { ascending: true });
+  if (error){
+    console.error('Error cargando catálogo:', error);
+    return;
+  }
+  catalogoProductos = data || [];
+}
+
+const productoInput = () => document.getElementById('f_producto_nombre');
+const acList = () => document.getElementById('productoAutocomplete');
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = productoInput();
+  input.addEventListener('input', () => {
+    productoSeleccionadoId = null;
+    const q = input.value.trim().toLowerCase();
+    const list = acList();
+    if (!q){ list.classList.remove('show'); list.innerHTML=''; return; }
+    const matches = catalogoProductos.filter(p =>
+      p.nombre.toLowerCase().includes(q) || (p.articulo_no || '').toLowerCase().includes(q)
+    ).slice(0, 12);
+    if (!matches.length){ list.classList.remove('show'); list.innerHTML=''; return; }
+    list.innerHTML = matches.map(p => `
+      <div class="autocomplete-item" data-id="${p.id}" data-nombre="${p.nombre.replace(/"/g,'&quot;')}">
+        ${p.nombre} <span class="ac-code">${p.articulo_no || ''}</span>
+      </div>
+    `).join('');
+    list.classList.add('show');
+    list.querySelectorAll('.autocomplete-item').forEach(item => {
+      item.addEventListener('click', () => {
+        input.value = item.dataset.nombre;
+        productoSeleccionadoId = item.dataset.id;
+        list.classList.remove('show');
+      });
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.field')) acList().classList.remove('show');
+  });
+});
+
+/* ============================================================
+   GUARDAR INCIDENCIA
+   ============================================================ */
+async function guardarIncidencia(){
+  const msg = document.getElementById('formMsg');
+  const btn = document.getElementById('btnGuardar');
+  msg.textContent = '';
+  msg.className = 'form-msg';
+
+  const payload = {
+    fecha: document.getElementById('f_fecha').value || new Date().toISOString().slice(0,10),
+    origen_incidencia: document.getElementById('f_origen').value,
+    fabricante: document.getElementById('f_fabricante').value,
+    motivo_incidencia: document.getElementById('f_motivo').value,
+    producto_nombre: productoInput().value.trim(),
+    producto_id: productoSeleccionadoId,
+    unidad: document.getElementById('f_unidad').value ? Number(document.getElementById('f_unidad').value) : null,
+    lote: document.getElementById('f_lote').value.trim() || null,
+    caducidad: document.getElementById('f_caducidad').value || null,
+    observaciones: document.getElementById('f_observaciones').value.trim() || null,
+  };
+
+  if (!payload.origen_incidencia || !payload.fabricante || !payload.motivo_incidencia || !payload.producto_nombre){
+    msg.textContent = 'Completá origen, fabricante, motivo y producto.';
+    msg.classList.add('err');
+    return;
+  }
+
+  btn.disabled = true;
+  const { error } = await supabase.from('incidencias_producto').insert(payload);
+  btn.disabled = false;
+
+  if (error){
+    console.error(error);
+    msg.textContent = 'Error al guardar: ' + error.message;
+    msg.classList.add('err');
+    return;
+  }
+
+  msg.textContent = 'Incidencia guardada correctamente.';
+  msg.classList.add('ok');
+  limpiarFormulario();
+  loadIncidencias();
+}
+
+function limpiarFormulario(){
+  document.getElementById('f_fecha').valueAsDate = new Date();
+  document.getElementById('f_origen').value = '';
+  document.getElementById('f_fabricante').value = '';
+  document.getElementById('f_motivo').value = '';
+  productoInput().value = '';
+  productoSeleccionadoId = null;
+  document.getElementById('f_unidad').value = '';
+  document.getElementById('f_lote').value = '';
+  document.getElementById('f_caducidad').value = '';
+  document.getElementById('f_observaciones').value = '';
+}
+
+/* ============================================================
+   LISTADO
+   ============================================================ */
+async function loadIncidencias(){
+  const tbody = document.getElementById('tablaBody');
+  tbody.innerHTML = '<tr><td colspan="10" class="loading-state">Cargando incidencias...</td></tr>';
+
+  const { data, error } = await supabase
+    .from('incidencias_producto')
+    .select('*')
+    .order('fecha', { ascending: false });
+
+  if (error){
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">Error al cargar: ${error.message}</td></tr>`;
+    return;
+  }
+
+  allIncidencias = data || [];
+  aplicarFiltros();
+  renderDashboard();
+}
+
+function aplicarFiltros(){
+  const desde = document.getElementById('fl_desde').value;
+  const hasta = document.getElementById('fl_hasta').value;
+  const fabricante = document.getElementById('fl_fabricante').value;
+  const motivo = document.getElementById('fl_motivo').value;
+  const texto = document.getElementById('fl_texto').value.trim().toLowerCase();
+
+  filteredIncidencias = allIncidencias.filter(r => {
+    if (desde && r.fecha < desde) return false;
+    if (hasta && r.fecha > hasta) return false;
+    if (fabricante && r.fabricante !== fabricante) return false;
+    if (motivo && r.motivo_incidencia !== motivo) return false;
+    if (texto){
+      const blob = [r.producto_nombre, r.lote, r.observaciones].filter(Boolean).join(' ').toLowerCase();
+      if (!blob.includes(texto)) return false;
+    }
+    return true;
+  });
+
+  ordenarLista();
+  renderTabla();
+}
+
+function ordenarPor(field){
+  if (sortState.field === field){
+    sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortState = { field, dir: 'asc' };
+  }
+  ordenarLista();
+  renderTabla();
+}
+
+function ordenarLista(){
+  const { field, dir } = sortState;
+  filteredIncidencias.sort((a,b) => {
+    let va = a[field], vb = b[field];
+    if (va == null) va = '';
+    if (vb == null) vb = '';
+    if (typeof va === 'number' || typeof vb === 'number'){
+      va = Number(va) || 0; vb = Number(vb) || 0;
+    }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function motivoBadgeClass(m){
+  if (m === 'PRODUCTO CON MOHO') return 'badge-moho';
+  if (['INSECTO EN PRODUCTO','OBJETO EXTRAÑO EN PRODUCTO','PRODUCTO VENCIDO'].includes(m)) return 'badge-danger';
+  if (m === 'OTROS') return 'badge-otros';
+  return 'badge-default';
+}
+
+function renderTabla(){
+  const tbody = document.getElementById('tablaBody');
+  const countPill = document.getElementById('countPill');
+  countPill.textContent = `${filteredIncidencias.length} incidencia${filteredIncidencias.length !== 1 ? 's' : ''}`;
+
+  if (!filteredIncidencias.length){
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No hay incidencias que coincidan con los filtros.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredIncidencias.map(r => `
+    <tr>
+      <td>${formatDate(r.fecha)}</td>
+      <td>${r.origen_incidencia || ''}</td>
+      <td>${r.fabricante || ''}</td>
+      <td>${r.producto_nombre || ''}</td>
+      <td><span class="badge ${motivoBadgeClass(r.motivo_incidencia)}">${r.motivo_incidencia || ''}</span></td>
+      <td>${r.unidad ?? ''}</td>
+      <td>${r.lote || ''}</td>
+      <td>${formatDate(r.caducidad)}</td>
+      <td>${r.observaciones || ''}</td>
+      <td class="row-actions"><button onclick="eliminarIncidencia('${r.id}')">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+
+async function eliminarIncidencia(id){
+  if (!confirm('¿Eliminar esta incidencia? Esta acción no se puede deshacer.')) return;
+  const { error } = await supabase.from('incidencias_producto').delete().eq('id', id);
+  if (error){
+    alert('Error al eliminar: ' + error.message);
+    return;
+  }
+  loadIncidencias();
+}
+
+function formatDate(d){
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function exportarCSV(){
+  if (!filteredIncidencias.length){ alert('No hay datos para exportar.'); return; }
+  const headers = ['Fecha','Origen','Fabricante','Producto','Motivo','Unidad','Lote','Caducidad','Observaciones'];
+  const rows = filteredIncidencias.map(r => [
+    r.fecha, r.origen_incidencia, r.fabricante, r.producto_nombre, r.motivo_incidencia,
+    r.unidad, r.lote, r.caducidad, r.observaciones
+  ]);
+  const csv = [headers, ...rows].map(row =>
+    row.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `incidencias_producto_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'dashboard') renderDashboard();
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard(){
+  if (!allIncidencias.length) return;
+
+  document.getElementById('kpiTotal').textContent = allIncidencias.length;
+
+  const now = new Date();
+  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth()+1).padStart(2,'0')}`;
+
+  const countByMonth = {};
+  let sumUnidades = 0;
+  const countByMotivo = {};
+  const countByFabricante = {};
+  const countByProducto = {};
+
+  allIncidencias.forEach(r => {
+    const mk = (r.fecha || '').slice(0,7);
+    countByMonth[mk] = (countByMonth[mk] || 0) + 1;
+    sumUnidades += Number(r.unidad) || 0;
+    if (r.motivo_incidencia) countByMotivo[r.motivo_incidencia] = (countByMotivo[r.motivo_incidencia] || 0) + 1;
+    if (r.fabricante) countByFabricante[r.fabricante] = (countByFabricante[r.fabricante] || 0) + 1;
+    if (r.producto_nombre) countByProducto[r.producto_nombre] = (countByProducto[r.producto_nombre] || 0) + 1;
+  });
+
+  document.getElementById('kpiMes').textContent = countByMonth[thisMonthKey] || 0;
+  const diff = (countByMonth[thisMonthKey] || 0) - (countByMonth[lastMonthKey] || 0);
+  document.getElementById('kpiTotalSub').textContent = `desde ${allIncidencias[allIncidencias.length-1]?.fecha ? formatDate(allIncidencias[allIncidencias.length-1].fecha) : '—'}`;
+
+  document.getElementById('kpiUnidades').textContent = sumUnidades.toLocaleString('es-ES');
+
+  const topMotivo = Object.entries(countByMotivo).sort((a,b) => b[1]-a[1])[0];
+  if (topMotivo){
+    document.getElementById('kpiMotivo').textContent = topMotivo[0];
+    document.getElementById('kpiMotivoSub').textContent = `${topMotivo[1]} casos (${Math.round(topMotivo[1]/allIncidencias.length*100)}%)`;
+  }
+
+  renderBarChart('chartMotivo', countByMotivo);
+  renderBarChart('chartFabricante', countByFabricante);
+  renderBarChart('chartProducto', countByProducto, 10);
+
+  // últimos 12 meses
+  const months = [];
+  for (let i = 11; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push([key, countByMonth[key] || 0]);
+  }
+  renderBarChart('chartMes', Object.fromEntries(months), 12, true);
+}
+
+function renderBarChart(containerId, dataObj, limit, preserveOrder){
+  const container = document.getElementById(containerId);
+  let entries = Object.entries(dataObj);
+  if (!preserveOrder) entries.sort((a,b) => b[1]-a[1]);
+  if (limit && !preserveOrder) entries = entries.slice(0, limit);
+
+  const max = Math.max(...entries.map(e => e[1]), 1);
+
+  if (!entries.length){
+    container.innerHTML = '<div class="empty-state">Sin datos</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(([label, val]) => `
+    <div class="bar-row">
+      <div class="bar-label" title="${label}">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(val/max*100)}%"></div></div>
+      <div class="bar-value">${val}</div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+initAuth();
+</script>
+</body>
+</html>
